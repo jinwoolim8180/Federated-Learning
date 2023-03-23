@@ -3,8 +3,6 @@ An open source ferderated learning implement based on Pytorch.
 
 Dataset: MNIST, Cifar-10, FEMNIST, Fashion-MNIST, Shakespeare.
 
-(数据集：MNIST, Cifar-10, FEMNIST, Fashion-MNIST, Shakespeare.)
-
 ## Dataset
 Your need to download dataset, except for Femnist and Shakespeare dataset, since this repository already includes the dataset.
 
