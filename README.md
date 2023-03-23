@@ -1,8 +1,6 @@
 # Federated Learning
 An open source ferderated learning implement based on Pytorch.
 
-(开源Pytorch联邦学习实现)
-
 Dataset: MNIST, Cifar-10, FEMNIST, Fashion-MNIST, Shakespeare.
 
 (数据集：MNIST, Cifar-10, FEMNIST, Fashion-MNIST, Shakespeare.)
@@ -12,7 +10,6 @@ Your need to download dataset, except for Femnist and Shakespeare dataset, since
 
 You can run the code and other datasets will be downloaded automatically.
 
-（需要下载数据集，但是Femnist和Shakespeare不用，因为本仓库已经包含了Femnist和Shakespeare数据集，其他dataset直接运行code就会自动下载。）
 ### Mnist
 IID:
 
