@@ -10,6 +10,8 @@ import numpy as np
 from torchvision import datasets, transforms
 import torch
 import os
+import random
+from typing import Dict
 
 from utils.sampling import mnist_iid, mnist_noniid, cifar_iid,cifar_noniid
 from utils.options import args_parser
@@ -68,6 +70,7 @@ if __name__ == '__main__':
         dataset_test = FEMNIST(train=False)
         dict_users = dataset_train.get_client_dic()
         args.num_users = len(dict_users)
+        print(args.num_users)
         if args.iid:
             exit('Error: femnist dataset is naturally non-iid')
         else:
@@ -112,10 +115,20 @@ if __name__ == '__main__':
     # training
     acc_test = []
     learning_rate = [args.lr for i in range(args.num_users)]
+    sel_clients = random.sample(range(args.num_users), args.sel_clients)
+    weights = (1. + torch.zeros(args.num_users).to(args.device)) / args.num_users
+    similarity = torch.eye(args.num_users).to(args.device)
     for iter in range(args.epochs):
         w_locals, loss_locals = [], []
         m = max(int(args.frac * args.num_users), 1)
-        idxs_users = np.random.choice(range(args.num_users), m, replace=False)
+        idxs_users = list(random.sample(range(args.num_users), m))
+        if args.sel_scheme == "practical":
+            result = list(set(idxs_users) | set(sel_clients))
+            result.sort()
+            idxs_users = result
+        else:
+            idxs_users.sort()
+        idxs_users = np.array(idxs_users)
         for idx in idxs_users:
             args.lr = learning_rate[idx]
             local = LocalUpdate(args=args, dataset=dataset_train, idxs=dict_users[idx])
@@ -125,7 +138,9 @@ if __name__ == '__main__':
             loss_locals.append(copy.deepcopy(loss))
 
         # update global weights
-        w_glob = FedAvg(w_locals)
+        w_avg = FedAvg(w_locals, idxs_users, args, loss_locals, sel_clients, weights, similarity)
+        for k in w_glob.keys():
+            w_glob[k].add_(w_avg[k])
         # copy weight to net_glob
         net_glob.load_state_dict(w_glob)
 
@@ -139,8 +154,8 @@ if __name__ == '__main__':
     rootpath = './log'
     if not os.path.exists(rootpath):
         os.makedirs(rootpath)
-    accfile = open(rootpath + '/accfile_fed_{}_{}_{}_iid{}.dat'.
-                   format(args.dataset, args.model, args.epochs, args.iid), "w")
+    accfile = open(rootpath + '/accfile_fed_{}_{}_{}_C{}_iid{}_{}.dat'.
+                   format(args.dataset, args.model, args.epochs, args.frac, args.iid, args.sel_scheme), "w")
 
     for ac in acc_test:
         sac = str(ac)
@@ -152,7 +167,7 @@ if __name__ == '__main__':
     plt.figure()
     plt.plot(range(len(acc_test)), acc_test)
     plt.ylabel('test accuracy')
-    plt.savefig(rootpath + '/fed_{}_{}_{}_C{}_iid{}_acc.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid))
+    plt.savefig(rootpath + '/fed_{}_{}_{}_C{}_iid{}_{}acc.png'.format(args.dataset, args.model, args.epochs, args.frac, args.iid, args.sel_scheme))
 
 
 
